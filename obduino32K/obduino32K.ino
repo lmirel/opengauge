@@ -165,7 +165,7 @@ To-Do:
 // build size down, will not allow 'on the fly' changes. Some features are dependant on other features.
 
 // Comment out to disable big numebers (4th and 5th sceeens)
-#define use_BIG_font
+//#define use_BIG_font
 
 // Comment for normal build
 // Uncomment for a debug build
@@ -183,7 +183,7 @@ To-Do:
 
 // Comment to use MC33290 ISO K line chip
 // Uncomment to use ELM327
-//#define ELM
+#define ELM
 
 // Comment out to use only the ISO 9141 K line
 // Uncomment to also use the ISO 9141 L line
@@ -214,7 +214,7 @@ To-Do:
 
 // Comment out to just try the PIDs without need to find ECU
 // Uncomment to use ECU polling to see if car is On or Off
-#define useECUState
+//#define useECUState
 
 // Uncomment to "disconnect" from ECU if RPM is 0 (set ECU state to off) 
 // because VW (maybe others) keeps responding some time after turning car off, 
@@ -242,7 +242,7 @@ To-Do:
 // Comment out to disable trip data saving after engine is off and RPM = 0
 // Uncomment to save trip data after engine is off and RPM = 0
 // DEFAULT: uncommented
-#define SaveTripDataAfterEngineTurnOff
+//#define SaveTripDataAfterEngineTurnOff
 
 // Comment out to read DTC on OBDuino start.
 // Uncomment to disable DTC read.
@@ -315,16 +315,22 @@ To-Do:
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 
+#if 0
 #include <LiquidCrystal.h>
 
-#define LCD_RS 4
-#define LCD_ENABLE 5
+#define LCD_RS 7
+#define LCD_ENABLE 8
 
-#define LCD_DATA1 7
-#define LCD_DATA2 8
-#define LCD_DATA3 12
-#define LCD_DATA4 13
+#define LCD_DATA1 9
+#define LCD_DATA2 10
+#define LCD_DATA3 11
+#define LCD_DATA4 12
+#endif
 
+#include <LiquidCrystal_I2C.h>
+#define LCD_ROWS  4
+#define LCD_COLS  20
+LiquidCrystal_I2C lcd (0x27, LCD_COLS, LCD_ROWS);
 // Uncomment to use SD card logging, 
 // need uncomment "#include <FileLogger.h>" too (few lines bellow) and "static char logString[logBufferSize] = {0};"
 // arduino0022 is messing up with #include and static variables within #ifdef ... #endif
@@ -374,9 +380,9 @@ To-Do:
 
 // LCD Pins same as mpguino
 // rs=4, enable=5, data=7,8,12,13
-LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_DATA1, LCD_DATA2, LCD_DATA3, LCD_DATA4);
-#define ContrastPin 6
-#define BrightnessPin 9
+//LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_DATA1, LCD_DATA2, LCD_DATA3, LCD_DATA4);
+#define ContrastPin 3
+#define BrightnessPin 4
 
 // LCD prototypes
 void lcd_print_P(char *string);  // to work with string in flash and PSTR()
@@ -450,9 +456,9 @@ byte brightnessIdx=2;
 // Note: Not currently tested on display larger than 16x2
 
 // How many rows of characters for the LCD (must be at least two)
-#define LCD_ROWS      2
+#define LCD_ROWS      4
 // How many characters across for the LCD (must be at least sixteen)
-#define LCD_COLS      16
+#define LCD_COLS      20
 // Calculate the middle point of the LCD display width
 #define LCD_SPLIT    (LCD_COLS / 2)
 //Calculate how many PIDs fit on a data screen (two per line)
@@ -595,7 +601,7 @@ unsigned long  pid41to60_support=0;
 #endif
 
 //The Textual Description of each PID
-prog_char PID_Desc[(1+LAST_PID)+(0xFF-FIRST_FAKE_PID)+1][9] PROGMEM=
+const char PID_Desc[(1+LAST_PID)+(0xFF-FIRST_FAKE_PID)+1][9] PROGMEM=
 {
 "PID00-21", // 0x00   PIDs supported
 "Stat DTC", // 0x01   Monitor status since DTCs cleared.
@@ -719,7 +725,7 @@ prog_char PID_Desc[(1+LAST_PID)+(0xFF-FIRST_FAKE_PID)+1][9] PROGMEM=
 "Eco Vis"  // 0xFF   Visually dispay relative economy with text
 };
 
-const prog_char obd_std_strings[17][9] PROGMEM =
+const char obd_std_strings[17][9] PROGMEM =
 {
 /*00*/	/*{ "" },*/ 	{ "OBD2CARB" }, { "OBDEPA" }, { "OBDEPA&2" },
 /*04*/  { "OBD1" }, 	{ "NO OBD"   },	{ "EOBD" },   { "EOBD&2" },
@@ -730,7 +736,7 @@ const prog_char obd_std_strings[17][9] PROGMEM =
 
 // returned length of the PID response.
 // constants so put in flash
-prog_uchar pid_reslen[] PROGMEM=
+const char pid_reslen[] PROGMEM=
 {
   // pid 0x00 to 0x1F
   4,4,2,2,1,1,1,1,1,1,1,1,2,1,1,1,
@@ -755,21 +761,21 @@ prog_uchar pid_reslen[] PROGMEM=
 
 byte active_screen=0;  // 0,1,2,... selected by left button
 
-prog_char pctd[] PROGMEM="- %d + "; // used in a couple of place
-prog_char pctdpctpct[] PROGMEM="- %d%% + "; // used in a couple of place
-prog_char pctspcts[] PROGMEM="%s %s"; // used in a couple of place
-prog_char pctldpcts[] PROGMEM="%ld %s"; // used in a couple of place
-prog_char select_no[]  PROGMEM="(NO) YES "; // for config menu
-prog_char select_yes[] PROGMEM=" NO (YES)"; // for config menu
-prog_char gasPrice[][10] PROGMEM={"-  %s\354 + ", CurrencyAdjustString}; // dual string for fuel price
-prog_char noDTCcodes[] PROGMEM="No DTC codes"; // for MIL
+const char pctd[] PROGMEM="- %d + "; // used in a couple of place
+const char pctdpctpct[] PROGMEM="- %d%% + "; // used in a couple of place
+const char pctspcts[] PROGMEM="%s %s"; // used in a couple of place
+const char pctldpcts[] PROGMEM="%ld %s"; // used in a couple of place
+const char select_no[]  PROGMEM="(NO) YES "; // for config menu
+const char select_yes[] PROGMEM=" NO (YES)"; // for config menu
+const char gasPrice[][10] PROGMEM={"-  %s\354 + ", CurrencyAdjustString}; // dual string for fuel price
+const char noDTCcodes[] PROGMEM="No DTC codes"; // for MIL
 
 
 // menu items used by menu_selection.
-prog_char *topMenu[] PROGMEM = {"Configure menu", "Exit", "Display", "Adjust", "PIDs", "Clear DTC"};
-prog_char *displayMenu[] PROGMEM = {"Display menu", "Exit", "Contrast", "Metric", "Fuel/Hour", "Font"};
-prog_char *adjustMenu[] PROGMEM = {"Adjust menu", "Exit", "Tank Size", "Fuel Cost", "Fuel %", "Speed %", "Out Wait", "Trip Wait", "Tank Used", "Tank Dist", "Eng Disp", };
-prog_char *PIDMenu[] PROGMEM = {"PID Screen menu", "Exit", "Scr 1", "Scr 2", "Scr 3", "Big 1", "Big 2"};
+char *topMenu[] = {"Configure menu", "Exit", "Display", "Adjust", "PIDs", "Clear DTC"};
+char *displayMenu[] = {"Display menu", "Exit", "Contrast", "Metric", "Fuel/Hour", "Font"};
+char *adjustMenu[] = {"Adjust menu", "Exit", "Tank Size", "Fuel Cost", "Fuel %", "Speed %", "Out Wait", "Trip Wait", "Tank Used", "Tank Dist", "Eng Disp", };
+char *PIDMenu[] = {"PID Screen menu", "Exit", "Scr 1", "Scr 2", "Scr 3", "Big 1", "Big 2"};
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
@@ -784,7 +790,7 @@ prog_char *PIDMenu[] PROGMEM = {"PID Screen menu", "Exit", "Scr 1", "Scr 2", "Sc
 #define OUTING       2  //Tracks your current outing
 #define NBTRIP       3
 
-prog_char * tripNames[NBTRIP] PROGMEM =
+const char tripNames[][NBTRIP] PROGMEM =
 {
   "Tank",
   "Trip",
@@ -900,7 +906,7 @@ params_t params=
   0 //MetricDisplayType
 };
 
-prog_char *econ_Visual[] PROGMEM=
+const char econ_Visual[][8] PROGMEM=
 {
   "Yuck!!8{",
   "Aweful:(",
@@ -1044,6 +1050,7 @@ unsigned long lastReceivedPIDTime = 0;
 
 // the buttons interrupt
 // this is the interrupt handler for button presses
+#if 0
 ISR(PCINT1_vect)
 {
 #if 0
@@ -1064,8 +1071,17 @@ ISR(PCINT1_vect)
   buttonState |= ~PINC;
 #endif
 }
+#endif
 
 #ifdef ELM
+#include <SoftwareSerial.h>
+#define SWS_RX 7
+#define SWS_TX 8
+#ifdef DEBUG
+  SoftwareSerial obdelm (SWS_RX, SWS_TX);
+#else
+  #define obdelm Serial
+#endif
 /* each ELM response ends with '\r' followed at the end by the prompt
  so read com port until we find a prompt */
 byte elm_read(char *str, byte size)
@@ -1074,7 +1090,7 @@ byte elm_read(char *str, byte size)
   byte i=0;
 
   // wait for something on com port
-  while((b=Serial.read())!=PROMPT && i<size)
+  while((b=obdelm.read())!=PROMPT && i<size)
   {
     if(/*b!=-1 &&*/ b>=' ')
       str[i++]=b;
@@ -1093,7 +1109,7 @@ byte elm_read(char *str, byte size)
 void elm_write(char *str)
 {
   while(*str!=NUL)
-    Serial.write(*str++);
+    obdelm.write(*str++);
 }
 
 // check header byte
@@ -1137,19 +1153,21 @@ byte elm_command(char *str, char *cmd)
 void elm_init()
 {
   char str[STRLEN];
-
-  Serial.begin(9600);
-  Serial.flush();
+  lcd.setCursor(0,1);
+  lcd_print_P(PSTR("wait ELM"));
+  delay (100);
+  //Serial.println ("wait ELM");
+  //
+  obdelm.begin (500000);
+  obdelm.flush ();
 
 #ifndef DEBUG
   // reset, wait for something and display it
   elm_command(str, PSTR("ATWS\r"));
-  lcd.setCursor(0,1);
   if(str[0]=='A')  // we have read back the ATWS
     lcd.print(str+4);
   else
     lcd.print(str);
-  lcd_print_P(PSTR(" Init"));
 
   // turn echo off
   elm_command(str, PSTR("ATE0\r"));
@@ -1161,8 +1179,8 @@ void elm_init()
     delay(1000);
   }
   while(elm_check_response("0100", str)!=0);
-
 #endif
+  lcd_print_P(PSTR(" ready"));
 }
 #else
 
@@ -4254,6 +4272,10 @@ void needBacklight(boolean On)
 
 void setup()                    // run once, when the sketch starts
 {
+#ifdef DEBUG  
+  Serial.begin(115200);
+#endif
+
 #ifndef ELM
   boolean success;
 
@@ -4265,7 +4287,8 @@ void setup()                    // run once, when the sketch starts
   #endif
 #endif
 
-  // buttons init
+#if 0
+// buttons init
   pinMode(lbuttonPin, INPUT);
   pinMode(mbuttonPin, INPUT);
   pinMode(rbuttonPin, INPUT);
@@ -4279,7 +4302,7 @@ void setup()                    // run once, when the sketch starts
   // interrupt 1 for the 3 buttons
   PCMSK1 |= (1 << PCINT11) | (1 << PCINT12) | (1 << PCINT13);
   PCICR  |= (1 << PCIE1);
-
+#endif
   // load parameters
   params_load();  // if something is wrong, default parms are used
 
@@ -4288,7 +4311,11 @@ void setup()                    // run once, when the sketch starts
   analogWrite(BrightnessPin,brightness[brightnessIdx]);
 #endif
   analogWrite(ContrastPin, params.contrast);
-  lcd.begin(LCD_COLS, LCD_ROWS);
+  //lcd.begin(LCD_COLS, LCD_ROWS);
+  lcd.init (); //initialize the lcd
+  lcd.backlight (); //open the backlight
+  lcd.setCursor (0, 0); // set the cursor to column 15, line 0
+  //
   lcd_char_init();
 
   // Temperature sensors init
@@ -4799,6 +4826,7 @@ void lcd_print_P(char *string)
   char c;
   while( (c = pgm_read_byte(string++)) )
     lcd.write(c);
+  //lcd.print (string);
 }
 
 void lcd_cls_print_P(char *string)
@@ -4819,7 +4847,7 @@ void lcd_char_init()
   // set cg ram to address 0x08 (B001000) to skip the
   // first 8 rows as we do not use char 0
   lcd.command(B01001000);
-  static prog_uchar chars[] PROGMEM ={
+  static char chars[] ={
     B10000,B00000,B10000,B00010,B00111,B11111,B00010,
     B10000,B00000,B10100,B00100,B00101,B10101,B00100,
     B11001,B00000,B11000,B01000,B00111,B10101,B01000,
@@ -4844,7 +4872,7 @@ void lcd_char_bignum()
   #define BIGFontFontCount 3
   #define BIGFontSymbolCount 8
   
-  static prog_uchar chars[BIGFontFontCount*BIGFontSymbolCount*8] PROGMEM = {
+  static char chars[BIGFontFontCount*BIGFontSymbolCount*8] PROGMEM = {
     //2x2_alpha 
     B00000, B11111, B11000, B00011, B11111, B11111, B11111, B11111,
     B00000, B11111, B11000, B00011, B11111, B11111, B11111, B11111,
