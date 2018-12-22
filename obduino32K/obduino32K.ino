@@ -1289,7 +1289,7 @@ void elm_init()
 {
   char str[STRLEN];
   lcd.setCursor (0, 3);
-  lcd_print_P (PSTR("wait ELM"));
+  lcd_print_P (PSTR("wait "));
   //
   obdelm.begin (ELM_BAUDRATE);
   obdelm.flush ();
@@ -1304,6 +1304,7 @@ void elm_init()
     lcd.print(str);
 #endif
   elm_command (str, PSTR("ATZ\r"));
+  //elm_command (str, PSTR("ATWS\r"));
   lcd.print (str);
   //
   elm_command (str, PSTR("ATSP0\r"));
@@ -1320,7 +1321,8 @@ void elm_init()
   }
   while (elm_check_response ("0100", str) != 0);
 #endif
-  lcd_print_P (PSTR(" ready"));
+  lcd.setCursor (0, 3);
+  lcd_print_P (PSTR("okay "));
 }
 #else
 
@@ -1898,7 +1900,8 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
   elm_read(str, STRLEN);
   if(elm_check_response(cmd_str, str)!=0)
   {
-    strcpy_P(retbuf, PSTR("ERROR"));
+    //strcpy_P(retbuf, PSTR("ERROR"));
+    strcpy_P(retbuf, str);
     return false;
   }
   // first 2 bytes are 0x41 and command, skip them,
