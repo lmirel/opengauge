@@ -184,7 +184,7 @@ To-Do:
 // Comment to use MC33290 ISO K line chip
 // Uncomment to use ELM327
 #define ELM
-
+#define ELM_BAUDRATE 9600
 // Comment out to use only the ISO 9141 K line
 // Uncomment to also use the ISO 9141 L line
 // This option requires additional wiring to function!
@@ -281,7 +281,7 @@ To-Do:
 // Uncoment to enable changing metric to US system
 // If commented - saves 1300bytes in metric, and 600bytes in US
 // DEFAULT: uncommented
-#define AllowChangeUnits
+//#define AllowChangeUnits
 #ifndef AllowChangeUnits
   #define UseSI
 //  #define UseUS
@@ -600,6 +600,7 @@ unsigned long  pid41to60_support=0;
 #define ECO_VISUAL    0xFF   // Visually dispay relative economy with text (at end of program)
 #endif
 
+#if 0
 //The Textual Description of each PID
 const char PID_Desc[(1+LAST_PID)+(0xFF-FIRST_FAKE_PID)+1][9] PROGMEM=
 {
@@ -733,7 +734,7 @@ const char obd_std_strings[17][9] PROGMEM =
 /*0C*/  { "J&EOBD"   }, { "J&EOBD&2" }, { "EURO4B1" }, { "EURO5B2" },
 /*10*/  { "EURO C"   }, { "EMD" }
 };
-
+#endif
 // returned length of the PID response.
 // constants so put in flash
 const char pid_reslen[] PROGMEM=
@@ -854,33 +855,34 @@ params_t;
 // parameters default values
 params_t params=
 {
-  40, // 40 does not work with some LCD, or some misterious problem so try 0 if it does not work
-  1,
-  true,
-  20,
-  100,
-  100,
-  15,
-  1090,
-  450,   
+  40,   //contrast: 40 does not work with some LCD, or some misterious problem so try 0 if it does not work
+  1,    //metric?
+  true, //comma?
+  20,   //per hour spd
+  100,  //fuel adjust
+  100,  //speed adjust
+  15,   //engine displacement: dL
+  1090, //gas price
+  450,  //tank size dL
   6, // 60 minutes (6 X 10) stop or less will not cause outing reset
   12, // 12 hour stop or less will not cause trip reset
-  {
+  {   //trip
     { 0,0,0 }, // tank:  dist, fuel, waste
     { 0,0,0 }, // trip:  dist, fuel, waste
     { 0,0,0 }  // outing:dist, fuel, waste
   },
-  {
+  {   //trip max
     { 0,0,0,0, 0,0 }, // tank:  speed,rpm,maf; trip count; time driving, time idling
     { 0,0,0,0, 0,0 }, // trip:  speed,rpm,maf; trip count; time driving, time idling
     { 0,0,0,0, 0,0 }  // outing:speed,rpm,maf; trip count; time driving, time idling
   },
-  {
-    { {FUEL_CONS,LOAD_VALUE,TANK_CONS,OUTING_FUEL
+  { //screens
+    { {VEHICLE_SPEED, ENGINE_RPM, FUEL_CONS, TANK_CONS
        #if LCD_ROWS == 4
-         ,OUTING_WASTE,OUTING_COST,ENGINE_ON,LOAD_VALUE
+         ,OUTING_FUEL, OUTING_WASTE, ENGINE_ON, LOAD_VALUE
        #endif
        } },
+#if 0
     { {TRIP_CONS,TRIP_DIST,TRIP_FUEL,COOLANT_TEMP
        #if LCD_ROWS == 4
          ,TRIP_WASTE,TRIP_COST,INT_AIR_TEMP,THROTTLE_POS
@@ -900,7 +902,8 @@ params_t params=
        #if LCD_ROWS == 4
          ,NO_DISPLAY,NO_DISPLAY,NO_DISPLAY,NO_DISPLAY
        #endif
-       } }      
+       } }
+#endif
   },
   0, //BigFontType
   0 //MetricDisplayType
@@ -1150,37 +1153,174 @@ byte elm_command(char *str, char *cmd)
   return elm_read(str, STRLEN);
 }
 
+/*
+ * init seq: manual debug
+ATZ
+ok>ATSP0
+ok>ATDP
+ok>ATE0
+ok>0100
+41 00 BE 1F A8 12>0100
+41 00 BE 1F A8 12>0101
+41 01 BE 1F A8 12>03
+43 00 00 00 00 00>010C
+41 0C 0F A0>010D
+41 0D FF>0111
+41 11 0F A0>0103
+41 03 00 00>0110
+41 10 00 00>010C
+41 04 7F>0104
+41 04 7F>010C
+41 0C 0F A0>010D
+41 0D 22>0111
+41 11 22>0103
+43 00 00 00 00 00>010C
+41 0C 0F A0>0104
+ * 
+ * init seq: subaru impreza 2008
+atz
+?
+
+>atsp0
+OK
+
+>atdp
+AUTO
+
+>ate0
+OK
+
+>0100
+SEARCHING...
+41 00 80 00 00 01
+41 00 BE 3F A8 13
+
+>0100
+41 00 80 00 00 01
+41 00 BE 3F A8 13
+
+>0101
+41 01 00 04 00 00
+41 01 00 07 E1 A1
+
+>SEARCHING...
+41 00 80 00 00 01
+41 00 BE 3F A8 13
+
+0101
+>41 01 00 07 E1 A1
+41 01 00 04 00 00
+
+0120
+>41 20 80 00 00 00
+41 20 90 1F A0 01
+
+0140
+>41 40 FE DC 80 40
+
+>41 10 01 25
+
+>NO DATA
+
+>41 04 06
+
+0140
+>41 40 FE DC 80 40
+
+0100
+>41 00 BE 3F A8 13
+41 00 80 00 00 01
+
+>41 00 80 00 00 01
+41 00 BE 3F A8 13
+
+0120
+>41 20 80 00 00 00
+41 20 90 1F A0 01
+
+0120
+>41 20 80 00 00 00
+41 20 90 1F A0 01
+
+0140
+>41 40 FE DC 80 40
+
+0140
+>41 40 FE DC 80 40
+
+>03
+43 00
+43 00
+
+>010C
+41 0C 0B F6
+
+>010D
+41 0D 00
+
+>0111
+41 11 22
+
+>0103
+41 03 02 00
+
+>0110
+41 10 00 FA
+
+>010C
+41 0C 0B 3B
+
+>0104
+41 04 05
+
+>010D
+41 0D 00
+
+>0111
+41 11 21
+
+>0103
+41 03 02 00
+
+ * 
+ * 
+ */
 void elm_init()
 {
   char str[STRLEN];
-  lcd.setCursor(0,1);
-  lcd_print_P(PSTR("wait ELM"));
-  delay (100);
-  //Serial.println ("wait ELM");
+  lcd.setCursor (0, 3);
+  lcd_print_P (PSTR("wait ELM"));
   //
-  obdelm.begin (500000);
+  obdelm.begin (ELM_BAUDRATE);
   obdelm.flush ();
 
 #ifndef DEBUG
   // reset, wait for something and display it
+#if 0
   elm_command(str, PSTR("ATWS\r"));
   if(str[0]=='A')  // we have read back the ATWS
     lcd.print(str+4);
   else
     lcd.print(str);
+#endif
+  elm_command (str, PSTR("ATZ\r"));
+  lcd.print (str);
+  //
+  elm_command (str, PSTR("ATSP0\r"));
+  elm_command (str, PSTR("ATDP\r"));
 
   // turn echo off
-  elm_command(str, PSTR("ATE0\r"));
+  elm_command (str, PSTR("ATE0\r"));
 
   // send 01 00 until we are connected
   do
   {
-    elm_command(str, PSTR("0100\r"));
-    delay(1000);
+    elm_command (str, PSTR("0100\r"));
+    delay (1000);
   }
-  while(elm_check_response("0100", str)!=0);
+  while (elm_check_response ("0100", str) != 0);
 #endif
-  lcd_print_P(PSTR(" ready"));
+  lcd_print_P (PSTR(" ready"));
 }
 #else
 
@@ -1733,7 +1873,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
     sprintf_P(retbuf, PSTR("%02X N/A"), pid);
     return false;
   }
-  
+#if 0
  #ifdef UsePIDCache
   // Check if PID is available in PID cache
   byte j=0;
@@ -1747,7 +1887,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
     return true;
   }
  #endif
-
+#endif
   // receive length depends on pid
   reslen=pgm_read_byte_near(pid_reslen+pid);
 
@@ -1836,7 +1976,8 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
       params.use_metric?"\003\004":"\006\004" 
     #else
       #ifdef UseSI
-        "\003\004" 
+//        "\003\004" 
+        "kph" 
       #endif  
       #ifdef UseUS
         "\006\004" 
@@ -1988,7 +2129,8 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
   #endif
 #endif
 
-    sprintf_P(retbuf, PSTR("%ld\005%c"), *ret, 
+    //sprintf_P(retbuf, PSTR("%ld\005%c"), *ret, 
+    sprintf_P(retbuf, PSTR("%ld%c"), *ret, 
     #ifdef AllowChangeUnits 
       params.use_metric?'C':'F'
     #else
@@ -2033,6 +2175,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
   case RUNTIME_START:
     sprintf_P(retbuf, PSTR("%u:%02u:%02u"), (unsigned int)*ret/3600, (unsigned int)(*ret/60)%60, (unsigned int)*ret%60);
     break;
+#if 0
   case OBD_STD:
     *ret=buf[0];
     if(buf[0]<=0x11)
@@ -2040,6 +2183,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
     else
       sprintf_P(retbuf, PSTR("OBD:%02X"), buf[0]);
     break;
+#endif
     // for the moment, everything else, display the raw answer
   default:
     // transform buffer to an hex value
@@ -2320,7 +2464,8 @@ unsigned int get_icons(char *retbuf)
     params.use_metric?(lowSpeed?"L\004":"\001\002"):(lowSpeed?"G\004":"\006\007")
   #else
     #ifdef UseSI
-      lowSpeed?"L\004":"\001\002" 
+      //lowSpeed?"L\004":"\001\002" 
+      "L"
     #endif  
     #ifdef UseUS
       lowSpeed?"G\004":"\006\007"
@@ -2413,7 +2558,8 @@ unsigned int get_cons(char *retbuf, byte ctrip)
     params.use_metric?"\001\002":"\006\007"
   #else
     #ifdef UseSI
-      "\001\002" 
+      //"\001\002" 
+      "L" 
     #endif  
     #ifdef UseUS
       "\006\007"
@@ -2976,9 +3122,19 @@ void check_supported_pids(void)
 {
   char str[STRLEN];
   //long tempPID; //local variable is 4bytes less then global tempLong, why?
+  lcd.setCursor (0, 0);
   
+#if 1
+  //pid01to20_support=0xBE1FA812;
+  pid01to20_support = 0xBE3FA813;
+  pid21to40_support = 0x901FA001;
+  pid41to60_support = 0xFEDC8040;
+  //pid01to20_support = 0x80000001;
+  //pid21to40_support = 0x80000000;
+  //pid41to60_support = 0xFEDC8040;
+#else
 #ifdef DEBUG
-  pid01to20_support=0xBE1FA812;
+  pid01to20_support = 0xBE1FA812;
 #else
   // on some ECU first PID read attemts some time fails, changed to 3 attempts
   for (byte i=0; i<3; i++)
@@ -2987,15 +3143,27 @@ void check_supported_pids(void)
     if (pid01to20_support) 
       break; 
   }
+  lcd.print(str);
+  //overwrite it!
+  pid01to20_support = 0xBE3FA813;
 #endif
 
+  lcd.setCursor (0, 2);
   if(is_pid_supported(PID_SUPPORT20, 0))
     if (get_pid(PID_SUPPORT20, str, &tempLong))
       pid21to40_support = tempLong; 
+  lcd.print(str);
+  pid21to40_support = 0x901FA001;
 
+  lcd.setCursor (0, 3);
   if(is_pid_supported(PID_SUPPORT40, 0))
     if (get_pid(PID_SUPPORT40, str, &tempLong))
       pid41to60_support = tempLong;
+  lcd.print(str);
+  pid41to60_support = 0xFEDC8040;
+
+  delay (5000);
+#endif
 }
 
 void display_mil_code_count(char *str, unsigned long *n, byte *count)
@@ -3091,8 +3259,9 @@ void check_mil_code(bool Silent)
       DTCBuf[DTCBufSize] = b;
       DTCBufSize++;
     }
+#ifndef ELM
     Serial.flush();
-    
+#endif    
     // VW Jetta 2001 example read: 48 6B 10 43 04 20 00 00 00 00 2A (11 bytes, 1 DTC)
     // 48 6B 10 - header
     // 43 - responce to 03
@@ -3398,7 +3567,7 @@ byte menu_selection(char ** menu, byte arraySize)
     
   return selection - 1;
 }
-
+#if 0
 void config_menu(void)
 {
   char str[STRLEN];
@@ -4062,7 +4231,7 @@ void config_menu(void)
   }
   lcd.clear(); //Clean up display (important if displaying with "BigNum"
 }
-
+#endif
 // This helps reduce code size by containing repeated functionality.
 boolean displaySecondLine(byte position, char * str)
 {
@@ -4146,7 +4315,7 @@ int convertToFarenheit(int celsius)
 {
   return ((celsius * 9) / 5) + 320;
 }
-
+#if 0
 void test_buttons(void)
 {
   // if any button pressed, wait for other buttons if any
@@ -4251,7 +4420,7 @@ void display_PID_names(void)
 
   delay(750); // give user some time to see new PID titles
 }
-
+#endif
 void needBacklight(boolean On)
 {
   //only if ECU or engine are off do we need the backlight.
@@ -4413,12 +4582,12 @@ void setup()                    // run once, when the sketch starts
 
   #ifndef DisableDTCReadOnStart
    // check if we have MIL code
-   check_mil_code(true);
+   //check_mil_code(true);
   #endif
 
-  lcd.clear();
-  old_time=millis();  // epoch
-  getpid_time=old_time;
+  lcd.clear ();
+  old_time = millis();  // epoch
+  getpid_time = old_time;
 #else
   //ISO_InitStep = 0; //Variable already initialized in define section, no need of additional init
   ECUconnection = oldECUconnection = false;
@@ -4428,6 +4597,24 @@ void setup()                    // run once, when the sketch starts
 
 static void DisplayLCDPIDS(char *str, char *str2)
 {
+#if 1
+/*
+    { {VEHICLE_SPEED, ENGINE_RPM, FUEL_CONS, TANK_CONS
+       #if LCD_ROWS == 4
+         ,OUTING_FUEL, OUTING_WASTE, ENGINE_ON, LOAD_VALUE
+       #endif
+       } },
+ * 
+ */
+  display(0, VEHICLE_SPEED);
+  display(1, ENGINE_RPM);
+  display(2, FUEL_CONS);
+  display(3, TANK_CONS);
+  display(4, OUTING_FUEL);
+  display(5, OUTING_WASTE);
+  display(6, ENGINE_ON);
+  display(7, COOLANT_TEMP);
+#else
   if (active_screen<NBSCREEN)
     for(byte current_PID=0; current_PID<LCD_PID_COUNT; current_PID++)
       display(current_PID, params.screen[active_screen].PID[current_PID]);
@@ -4455,6 +4642,7 @@ static void DisplayLCDPIDS(char *str, char *str2)
     }  
   }
   #endif
+#endif
 }
 
 /*
@@ -4466,114 +4654,14 @@ void loop()                     // run over and over again
   char str[STRLEN];
   char str2[STRLEN];
 
-  #ifdef useECUState
-
-    #ifdef DEBUG
-      ECUconnection = true;
-      has_rpm = true;
-    #else
-      ECUconnection = verifyECUAlive();
-    #endif
-
-  if (oldECUconnection != ECUconnection)
-  {
-    if (ECUconnection)
-    {
-      unsigned long nowOn = millis();
-      unsigned long engineOffPeriod = calcTimeDiff(engine_off, nowOn);
-      
-      if (has_rpm > 0)
-        analogWrite(BrightnessPin, brightness[brightnessIdx]);
- 
-      if (engineOffPeriod > (params.OutingStopOver * MINUTES_GRANULARITY * MILLIS_PER_MINUTE))
-      {
-        trip_reset(OUTING, false);
-        // zero instant cons
-        clear_icons_tvss();
-        clear_icons_tmaf();
-        engine_on = nowOn;
-      }
-      else
-      {
-        // combine last trip time to this one! Not including the stop over time
-        engine_on = nowOn - calcTimeDiff(engine_on, engine_off);
-      }
-
-      if (engineOffPeriod > (params.TripStopOver * MILLIS_PER_HOUR))
-      {
-        trip_reset(TRIP, false);
-      }
-    }
-    else  // Car is off
-    {
-      #ifdef do_ISO_Reinit
-        ISO_InitStep = 0;
-      #endif
-
-      save_params_and_display();
-      //clear screen after turn off
-      lcd.clear();
-      
-      #ifdef carAlarmScreen
-      refreshAlarmScreen = true;
-      #endif
-    }
-    oldECUconnection = ECUconnection;
-  }
-
-  // If engine was on, and RPM is 0 - save trip data and turn engine off
-  if (engine_started == 1 && has_rpm == 0)
-  {
-    engine_started = 0;
-    
-   #ifdef SaveTripDataAfterEngineTurnOff
-     save_params_and_display();
-
-     //Turn the Backlight off
-     analogWrite(BrightnessPin, brightness[0]);
-   #endif
-  }
-  
-  if (ECUconnection)
-  {
-    // If car was off, backlight was turned off, we need to turn it back on
-    if (engine_started == 0 && has_rpm != 0)
-    {
-      engine_started = 1;
-      analogWrite(BrightnessPin, brightness[brightnessIdx]);
-      
-      #ifdef carAlarmScreen
-      lcd.clear();  // Clear away any debris from Car Alarm Screen
-      #endif
-    }
-    
-    // this read and assign vss and maf and accumulate trip data
-    accu_trip();
-
-    // display on LCD
-    DisplayLCDPIDS(str, str2);
-  }
-  else
-  {
-    #ifdef carAlarmScreen
-     // ECU is off so print ready screen instead of PIDS while we wait for ECU action
-     if (ISO_InitStep < 2) // Print to LCD if idle only
-       displayAlarmScreen();
-    #else
-     // for some reason the display on LCD
-     if (ISO_InitStep < 2) // Print to LCD if idle only
-       DisplayLCDPIDS(str, str2);
-    #endif
-
-    #ifdef do_ISO_Reinit
-      iso_init();
-    #endif
-  }
-#else
-
   // test if engine is started
   has_rpm = (get_pid(ENGINE_RPM, str, &engineRPM) && engineRPM > 0) ? 1 : 0;
-
+  if (has_rpm == 0)
+  {
+    lcd.setCursor (0, 3);
+    lcd_print_P (PSTR("engine stopped"));
+  }
+  //
   if (engine_started==0 && has_rpm!=0)
   {
     unsigned long nowOn = millis();
@@ -4581,7 +4669,9 @@ void loop()                     // run over and over again
     engine_started=1;
     param_saved=0;
     
-    analogWrite(BrightnessPin, brightness[brightnessIdx]);
+    lcd.setCursor (0, 3);
+    lcd_print_P (PSTR("engine start"));
+    //analogWrite(BrightnessPin, brightness[brightnessIdx]);
 
     if (engineOffPeriod > (params.OutingStopOver * MINUTES_GRANULARITY * MILLIS_PER_MINUTE))
     {
@@ -4631,10 +4721,8 @@ void loop()                     // run over and over again
     #endif  
   }
 
-#endif
-
   // test buttons
-  test_buttons();
+  //test_buttons();
 }
 
 // Calculate the time difference, and account for roll over too
