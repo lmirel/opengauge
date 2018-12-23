@@ -921,7 +921,7 @@ const char econ_Visual[][8] PROGMEM=
   "HyprM 8D"
 };
 
-#define STRLEN  40
+#define STRLEN  60  //on init, the elm might output other stuff like: SEARCHING...
 
 #ifdef ELM
 #define NUL     '\0'
@@ -1085,6 +1085,25 @@ ISR(PCINT1_vect)
 #else
   #define obdelm Serial
 #endif
+char is_hex (char c)
+{
+  if (c != ' ')
+  {
+    if (c < '0' || c > 'f')
+      return 0;
+    else
+    {
+      if (c < 'A' && c > '9')
+        return 0;
+      else
+      {
+        if (c < 'a' && c > 'F')
+          return 0;
+      }
+    }
+  }
+  return 1;
+}
 /* each ELM response ends with '\r' followed at the end by the prompt
  so read com port until we find a prompt */
 byte elm_read(char *str, byte size)
@@ -1093,9 +1112,10 @@ byte elm_read(char *str, byte size)
   byte i=0;
 
   // wait for something on com port
-  while((b=obdelm.read())!=PROMPT && i<size)
+  while((b = obdelm.read ()) != PROMPT && i < size)
   {
-    if(/*b!=-1 &&*/ b>=' ')
+    if(/*b!=-1 &&*/ b >= ' ')
+    //if(is_hex (b))
       str[i++]=b;
   }
 
@@ -1105,7 +1125,9 @@ byte elm_read(char *str, byte size)
     return PROMPT;
   }
   else
+  {
     return DATA;
+  }
 }
 
 // buf must be ASCIIZ
@@ -1138,9 +1160,28 @@ byte elm_compact_response(byte *buf, char *str)
   // return buf: 0x1AF8
 
   str+=6;
-  while(*str!=NUL)
-    buf[i++]=strtoul(str, &str, 16);  // 16 = hex
-
+#if 1
+  while(*str != NUL)
+  {
+    //buf[i++] = strtoul (str, &str, 16);  // 16 = hex
+    if (*str != ' ')
+    {
+      buf[i] = (*str<'A')?*str-'0':*str-'A'+10;
+      buf[i] *= 16;
+      str++;
+      buf[i] += (*str<'A')?*str-'0':*str-'A'+10;
+      i++;
+    }
+    str++;
+  }
+  //lcd.print ("fini");
+#else
+  buf[0] = 0;
+  buf[1] = 10;
+  buf[2] = 13;
+  buf[3] = 7;
+  i=4;
+#endif
   return i;
 }
 
@@ -1207,16 +1248,16 @@ SEARCHING...
 41 00 80 00 00 01
 41 00 BE 3F A8 13
 
-0101
->41 01 00 07 E1 A1
+>0101
+41 01 00 07 E1 A1
 41 01 00 04 00 00
 
-0120
->41 20 80 00 00 00
+>0120
+41 20 80 00 00 00
 41 20 90 1F A0 01
 
-0140
->41 40 FE DC 80 40
+>0140
+41 40 FE DC 80 40
 
 >41 10 01 25
 
@@ -1256,7 +1297,7 @@ SEARCHING...
 41 0C 0B F6
 
 >010D
-41 0D 00
+41 0D 22
 
 >0111
 41 11 22
@@ -1323,6 +1364,9 @@ void elm_init()
 #endif
   lcd.setCursor (0, 3);
   lcd_print_P (PSTR("okay "));
+  //
+  //if (obdelm.available() > 0)
+    //elm_read (str, STRLEN);
 }
 #else
 
@@ -1890,26 +1934,34 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
   }
  #endif
 #endif
-  // receive length depends on pid
-  reslen=pgm_read_byte_near(pid_reslen+pid);
 
 #ifdef ELM
   sprintf_P(cmd_str, PSTR("01%02X\r"), pid);
   elm_write(cmd_str);
+  //lcd.setCursor (0, 1);
+  //lcd.print (cmd_str);
 #ifndef DEBUG
   elm_read(str, STRLEN);
+  //lcd.setCursor (0, 2);
+  //lcd.print (str);
+  //delay (3000);
+  //lcd.setCursor (0, 3);
   if(elm_check_response(cmd_str, str)!=0)
   {
-    //strcpy_P(retbuf, PSTR("ERROR"));
-    strcpy_P(retbuf, str);
+    strcpy_P(retbuf, PSTR("ERROR"));
+    //lcd.print ("ERROR");
     return false;
   }
+  //lcd.print ("done");
   // first 2 bytes are 0x41 and command, skip them,
   // convert response in hex and return in buf
   elm_compact_response(buf, str);
+  //lcd.print ("resp");
 #endif
 #else
 
+  // receive length depends on pid
+  reslen=pgm_read_byte_near(pid_reslen+pid);
   // if not connected - do not send any request, 
   // and do not disturb init proccess in case of reinit
   if (!ECUconnection)
@@ -2133,7 +2185,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
 #endif
 
     //sprintf_P(retbuf, PSTR("%ld\005%c"), *ret, 
-    sprintf_P(retbuf, PSTR("%ld%c"), *ret, 
+    sprintf_P(retbuf, PSTR("%ld %c"), *ret, 
     #ifdef AllowChangeUnits 
       params.use_metric?'C':'F'
     #else
@@ -3126,7 +3178,6 @@ void check_supported_pids(void)
   char str[STRLEN];
   //long tempPID; //local variable is 4bytes less then global tempLong, why?
   lcd.setCursor (0, 0);
-  
 #if 1
   //pid01to20_support=0xBE1FA812;
   pid01to20_support = 0xBE3FA813;
@@ -3139,6 +3190,7 @@ void check_supported_pids(void)
 #ifdef DEBUG
   pid01to20_support = 0xBE1FA812;
 #else
+  //pid01to20_support = 0xBE3FA813;
   // on some ECU first PID read attemts some time fails, changed to 3 attempts
   for (byte i=0; i<3; i++)
   {
@@ -3147,8 +3199,10 @@ void check_supported_pids(void)
       break; 
   }
   lcd.print(str);
+  //elm_read (str, STRLEN);
+  //for (int i =0; i<1000; i++);
   //overwrite it!
-  pid01to20_support = 0xBE3FA813;
+  //pid01to20_support = 0xBE3FA813;
 #endif
 
   lcd.setCursor (0, 2);
@@ -3156,16 +3210,19 @@ void check_supported_pids(void)
     if (get_pid(PID_SUPPORT20, str, &tempLong))
       pid21to40_support = tempLong; 
   lcd.print(str);
-  pid21to40_support = 0x901FA001;
+  //pid21to40_support = 0x901FA001;
+  //elm_read (str, STRLEN);
+  //for (int i =0; i<1000; i++);
 
   lcd.setCursor (0, 3);
   if(is_pid_supported(PID_SUPPORT40, 0))
     if (get_pid(PID_SUPPORT40, str, &tempLong))
       pid41to60_support = tempLong;
   lcd.print(str);
-  pid41to60_support = 0xFEDC8040;
+  //elm_read (str, STRLEN);
+  //pid41to60_support = 0xFEDC8040;
 
-  delay (5000);
+  //for (int i =0; i<1000; i++);
 #endif
 }
 
@@ -4656,7 +4713,9 @@ void loop()                     // run over and over again
 {
   char str[STRLEN];
   char str2[STRLEN];
-
+  //lcd.setCursor (0, 0);
+  //lcd_print_P (PSTR("loop"));
+  
   // test if engine is started
   has_rpm = (get_pid(ENGINE_RPM, str, &engineRPM) && engineRPM > 0) ? 1 : 0;
   if (has_rpm == 0)
