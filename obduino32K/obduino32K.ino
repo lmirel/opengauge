@@ -1,4 +1,102 @@
+/*
+################
+# test data: 0100 / 010C / 010D / 0111 / 0103 / 0110 / 
+41 00 BE 3F A8 13
+41 00 80 00 00 01
+>
+41 0C 0B 3B
+>
+41 0D 00
+>
+41 11 21
+>
+41 03 02 00
+>
+41 10 00 FA
+>
+# test data: 0110 / 010D / 010C / 0105 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0D 22
+>
+41 0C 0B 3B
+>
+41 05 AA
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
+# test data: 010C / 010C / 010D / 010C / 010D / 0111 / 0103
+41 0C 0B 3B
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
 
+# test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 2B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 0kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 4B 3B
+>
+41 0D 00
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 2kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 5B 3B
+>
+41 0D 02
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 100kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 2B 3B
+>
+41 0D 64
+>
+41 11 21
+>
+41 03 02 00
+>
+
+ * 
+ */
 
 /* OBDuino32K  (Requires Atmega328 for your Arduino)
 
@@ -760,7 +858,7 @@ const char pid_reslen[] PROGMEM=
 #define BIG_NBSCREEN 2
 #endif
 
-byte active_screen=0;  // 0,1,2,... selected by left button
+byte active_screen = 1;  // 0,1,2,... selected by left button
 
 const char pctd[] PROGMEM="- %d + "; // used in a couple of place
 const char pctdpctpct[] PROGMEM="- %d%% + "; // used in a couple of place
@@ -943,10 +1041,10 @@ long tempLong; // Useful for transitory values while getting PID information.
 
 // some globals, for trip calculation and others
 unsigned long old_time;
-byte has_rpm=0;
-long vss=0;  // speed
-long maf=0;  // MAF
-long engineRPM=0; // RPM
+byte has_rpm = 0;       //engine started
+long vss = 0;           //vehicle speed
+long maf = 0;           //MAF
+long engineRPM = 0;     // RPM
 unsigned long engine_on, engine_off; //used to track time of trip.
 
 #ifdef AutoSave
@@ -1151,15 +1249,15 @@ byte elm_check_response(const char *cmd, char *str)
   return 0;  // no error
 }
 
-byte elm_compact_response(byte *buf, char *str)
+byte elm_compact_response (byte *buf, char *str)
 {
-  byte i=0;
+  byte i = 0;
 
   // start at 6 which is the first hex byte after header
   // ex: "41 0C 1A F8"
   // return buf: 0x1AF8
 
-  str+=6;
+  str += 6;
 #if 1
   while(*str != NUL)
   {
@@ -1189,9 +1287,9 @@ byte elm_compact_response(byte *buf, char *str)
 // cmd is a PSTR !!
 byte elm_command(char *str, char *cmd)
 {
-  strcpy_P(str, cmd);
-  elm_write(str);
-  return elm_read(str, STRLEN);
+  strcpy_P (str, cmd);
+  elm_write (str);
+  return elm_read (str, STRLEN);
 }
 
 /*
@@ -1322,8 +1420,103 @@ SEARCHING...
 
 >0103
 41 03 02 00
+################
+# test data: 0100 / 010C / 010D / 0111 / 0103 / 0110 / 
+41 00 BE 3F A8 13
+41 00 80 00 00 01
+>
+41 0C 0B 3B
+>
+41 0D 00
+>
+41 11 21
+>
+41 03 02 00
+>
+41 10 00 FA
+>
+# test data: 0110 / 010D / 010C / 0105 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0D 22
+>
+41 0C 0B 3B
+>
+41 05 AA
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
+# test data: 010C / 010C / 010D / 010C / 010D / 0111 / 0103
+41 0C 0B 3B
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 0C 0B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
 
- * 
+# test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 4B 3B
+>
+41 0D 22
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 0kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 4B 3B
+>
+41 0D 00
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 2kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 4B 3B
+>
+41 0D 02
+>
+41 11 21
+>
+41 03 02 00
+>
+
+# 100kph test data: 0110 / 010C / 010D / 0111 / 0103
+41 10 00 FA
+>
+41 0C 4B 3B
+>
+41 0D 64
+>
+41 11 21
+>
+41 03 02 00
+>
+
+ 
  * 
  */
 void elm_init()
@@ -2730,7 +2923,8 @@ void get_dist(char *retbuf, byte ctrip)
     params.use_metric?"\003":"\006"
   #else
     #ifdef UseSI
-      "\003"
+//      "\003"
+      " km"
     #endif  
     #ifdef UseUS
       "\006"
@@ -3128,7 +3322,7 @@ void get_pid_internal(char *str, byte pid)
     get_pid(pid, str, &tempLong);
 }
 
-void display(byte location, byte pid)
+void display_pid (byte location, byte pid)
 {
   char str[STRLEN];
   
@@ -3157,16 +3351,57 @@ void display(byte location, byte pid)
   byte clearEnd   = LCD_SPLIT;
   if (!isLeft)
   {
-    textPos    = LCD_COLS - strlen(str);
+    textPos    = LCD_COLS - clearStart;
     clearStart = LCD_SPLIT;
     clearEnd   = textPos;
   }   
 
-  lcd.setCursor(textPos,row);
-  lcd.print(str);
+  lcd.setCursor (textPos, row);
+  lcd.print (str);
 
   // clean up any possible leading or trailing data
-  lcd.setCursor(clearStart,row);
+  lcd.setCursor (clearStart, row);
+  for (byte cleanup = clearStart; cleanup < clearEnd; cleanup++)
+  {
+    lcd.write(' ');
+  }
+}
+
+void display_dat (byte location, char *data)
+{
+  if (data == NULL)
+    return;
+
+  // left locations are left aligned
+  // right locations are right aligned
+
+  // truncate any string that is too long to display correctly
+  data [LCD_SPLIT] = '\0';
+
+  byte row = location / 2;  // Two PIDs per line
+  boolean isLeft = location % 2 == 0; // First PID per line is always left
+
+// CodeOptimization (10 bytes)
+// same "if condition" should be done in one "if"
+//  byte textPos    = isLeft ? 0 : LCD_COLS - strlen(str);
+//  byte clearStart = isLeft ? strlen(str) : LCD_SPLIT;
+//  byte clearEnd   = isLeft ? LCD_SPLIT : textPos;
+
+  byte textPos    = 0;
+  byte clearStart = strlen (data);
+  byte clearEnd   = LCD_SPLIT;
+  if (!isLeft)
+  {
+    textPos    = LCD_COLS - clearStart;
+    clearStart = LCD_SPLIT;
+    clearEnd   = textPos;
+  }   
+
+  lcd.setCursor (textPos, row);
+  lcd.print (data);
+
+  // clean up any possible leading or trailing data
+  lcd.setCursor (clearStart, row);
   for (byte cleanup = clearStart; cleanup < clearEnd; cleanup++)
   {
     lcd.write(' ');
@@ -3455,7 +3690,7 @@ void clear_mil_code(void)
 /*
  * Configuration menu
  */
-
+#if 0
 boolean delay_reset_button(void)
 {
   byte DelayCount = 0;
@@ -3627,6 +3862,8 @@ byte menu_selection(char ** menu, byte arraySize)
     
   return selection - 1;
 }
+#endif
+
 #if 0
 void config_menu(void)
 {
@@ -4291,7 +4528,7 @@ void config_menu(void)
   }
   lcd.clear(); //Clean up display (important if displaying with "BigNum"
 }
-#endif
+
 // This helps reduce code size by containing repeated functionality.
 boolean displaySecondLine(byte position, char * str)
 {
@@ -4299,6 +4536,7 @@ boolean displaySecondLine(byte position, char * str)
   lcd.print(str);
   return delay_reset_button();
 }
+#endif
 
 // Reworked a little to allow all trip types to be reset from one function.
 void trip_reset(byte ctrip, boolean ask)
@@ -4374,6 +4612,41 @@ unsigned int convertToLitres(unsigned int gallons)
 int convertToFarenheit(int celsius)
 {
   return ((celsius * 9) / 5) + 320;
+}
+
+#define BTN_PIN   4
+int push_btn = 0; // 0 no push, 1 btn released, many - btn pressed
+void test_buttons(void)
+{
+  if (digitalRead (BTN_PIN) == LOW)
+  {
+    if (push_btn > 0)
+      push_btn++;
+    else
+      push_btn = 2;
+  }
+  else
+  {
+    if (push_btn > 1)
+      push_btn = 1;
+    else if (push_btn == 1)
+      push_btn = 0;
+  }
+  //check button
+  switch (push_btn)
+  {
+    case 0: //no push
+      break;
+    case 1: //btn released
+    {
+      active_screen++;
+      if (active_screen > 1)
+        active_screen = 0;
+      break;
+    }
+    default: //btn pressed
+      ;//
+  }
 }
 #if 0
 void test_buttons(void)
@@ -4498,8 +4771,7 @@ void needBacklight(boolean On)
 /*
  * Initialization
  */
-
-void setup()                    // run once, when the sketch starts
+void setup ()                    // run once, when the sketch starts
 {
 #ifdef DEBUG  
   Serial.begin(115200);
@@ -4515,7 +4787,7 @@ void setup()                    // run once, when the sketch starts
   pinMode(L_OUT, OUTPUT);
   #endif
 #endif
-
+  pinMode (BTN_PIN, INPUT_PULLUP);
 #if 0
 // buttons init
   pinMode(lbuttonPin, INPUT);
@@ -4655,8 +4927,85 @@ void setup()                    // run once, when the sketch starts
 #endif 
 }
 
+char screen_cleanup = 0;
+//#define MAX_RPM   7000
+#define RPMP_COL  350 // 7000 / 20 = 350 rpms per display column
+static void lcd_showscreen_1 ()
+{
+  int i, j;
+  char lstr[STRLEN];
+  static long z2_100s = 0;
+  static long z2_100t = 0;
+  static long z2_100b = 0;
+  //
+  if (screen_cleanup)
+    lcd.clear ();
+  //rpm indicator
+  lcd.setCursor (0, 0);
+  for (i = 0; i < engineRPM / RPMP_COL; i++)
+    lcd.print ("#");
+  for (j = i; j < 20; j++)
+    lcd.print (" ");
+  //speed indicator
+  snprintf (lstr, STRLEN, "%d kph", vss);
+  display_dat (2, lstr);
+  snprintf (lstr, STRLEN, "%d rpm", engineRPM);
+  display_dat (3, lstr);
+  //0 to 100
+  if (vss == 0)
+    z2_100s = 0;
+  //start chrono?
+  if (vss > 0 && vss < 5 && z2_100s == 0)
+    z2_100s = millis ();
+  if (vss == 100 && z2_100s > 0)
+  {
+    z2_100t = millis () - z2_100s;
+    z2_100s = 0;
+  }
+  lcd.setCursor (0, 2);
+  lcd.print ("0-100");
+  lcd.setCursor (12, 2);
+  lcd.print (z2_100t / 1000);
+  lcd.print (".");
+  lcd.print (z2_100t % 1000);
+  //best time
+  if (z2_100b == 0 && z2_100t > 0)
+    z2_100b = z2_100t;
+  if (z2_100t < z2_100b)
+    z2_100b = z2_100t;
+  lcd.setCursor (0, 3);
+  lcd.print ("0-100 best");
+  lcd.setCursor (12, 3);
+  lcd.print (z2_100b / 1000);
+  lcd.print (".");
+  lcd.print (z2_100b % 1000);
+}
+
+static void lcd_showscreen_0 ()
+{
+  if (screen_cleanup)
+    lcd.clear ();
+  //
+  display_pid (0, VEHICLE_SPEED);
+  display_pid (1, ENGINE_RPM);
+  display_pid (2, ENGINE_ON);
+  display_pid (3, OUTING_DIST);
+  display_pid (4, FUEL_CONS);
+  display_pid (5, COOLANT_TEMP);
+  display_pid (6, OUTING_FUEL);
+  display_pid (7, OUTING_WASTE);
+}
+
 static void DisplayLCDPIDS(char *str, char *str2)
 {
+  static char last_screen = 0;
+  if (last_screen != active_screen)
+  {
+    screen_cleanup++;
+    last_screen = active_screen;
+  }
+  else
+    screen_cleanup = 0;
 #if 1
 /*
     { {VEHICLE_SPEED, ENGINE_RPM, FUEL_CONS, TANK_CONS
@@ -4666,14 +5015,20 @@ static void DisplayLCDPIDS(char *str, char *str2)
        } },
  * 
  */
-  display(0, VEHICLE_SPEED);
-  display(1, ENGINE_RPM);
-  display(2, FUEL_CONS);
-  display(3, TANK_CONS);
-  display(4, OUTING_FUEL);
-  display(5, OUTING_WASTE);
-  display(6, ENGINE_ON);
-  display(7, COOLANT_TEMP);
+  switch (active_screen)
+  {
+    default:
+    case 1:
+    {
+      lcd_showscreen_1 ();
+      break;
+    }
+    case 0:
+    {
+      lcd_showscreen_0 ();
+      break;
+    }
+ }
 #else
   if (active_screen<NBSCREEN)
     for(byte current_PID=0; current_PID<LCD_PID_COUNT; current_PID++)
@@ -4709,7 +5064,7 @@ static void DisplayLCDPIDS(char *str, char *str2)
  * Main loop
  */
 
-void loop()                     // run over and over again
+void loop ()                     // run over and over again
 {
   char str[STRLEN];
   char str2[STRLEN];
@@ -4717,31 +5072,33 @@ void loop()                     // run over and over again
   //lcd_print_P (PSTR("loop"));
   
   // test if engine is started
-  has_rpm = (get_pid(ENGINE_RPM, str, &engineRPM) && engineRPM > 0) ? 1 : 0;
-  if (has_rpm == 0)
+  has_rpm = (get_pid (ENGINE_RPM, str, &engineRPM) && engineRPM > 0) ? 1 : 0;
+  if (0 && has_rpm == 0)
   {
     lcd.setCursor (0, 3);
     lcd_print_P (PSTR("engine stopped"));
   }
   //
-  if (engine_started==0 && has_rpm!=0)
+  if (engine_started == 0 && has_rpm != 0)
   {
     unsigned long nowOn = millis();
     unsigned long engineOffPeriod = calcTimeDiff(engine_off, nowOn);
     engine_started=1;
     param_saved=0;
-    
-    lcd.setCursor (0, 3);
-    lcd_print_P (PSTR("engine start"));
+    if (0)
+    {
+      lcd.setCursor (0, 3);
+      lcd_print_P (PSTR("engine start"));
+    }
     //analogWrite(BrightnessPin, brightness[brightnessIdx]);
 
     if (engineOffPeriod > (params.OutingStopOver * MINUTES_GRANULARITY * MILLIS_PER_MINUTE))
     {
       //Reset the current outing trip from last trip
-      trip_reset(OUTING, false);
+      trip_reset (OUTING, false);
       // zero instant cons
-      clear_icons_tvss();
-      clear_icons_tmaf();
+      clear_icons_tvss ();
+      clear_icons_tmaf ();
       engine_on = nowOn; //Reset the time at which the car starts at
     }
     else
@@ -4752,15 +5109,15 @@ void loop()                     // run over and over again
 
     if (engineOffPeriod > (params.TripStopOver * MILLIS_PER_HOUR))
     {
-      trip_reset(TRIP, false);
+      trip_reset (TRIP, false);
     }
   }
 
   // if engine was started but RPM is now 0
   // save param only once, by flopping param_saved
-  if (has_rpm==0 && param_saved==0 && engine_started!=0)
+  if (has_rpm == 0 && param_saved == 0 && engine_started != 0)
   {
-    save_params_and_display();
+    save_params_and_display ();
 
     #ifdef carAlarmScreen
       refreshAlarmScreen = true;
@@ -4770,21 +5127,21 @@ void loop()                     // run over and over again
   if (engine_started)
   {
     // this read and assign vss and maf and accumulate trip data
-    accu_trip();
+    accu_trip ();
     // display on LCD
-    DisplayLCDPIDS(str, str2);
+    DisplayLCDPIDS (str, str2);
   }  
   else
   {
     #ifdef carAlarmScreen
-      displayAlarmScreen();
+      displayAlarmScreen ();
     #else
-      DisplayLCDPIDS(str, str2);
+      DisplayLCDPIDS (str, str2);
     #endif  
   }
 
   // test buttons
-  //test_buttons();
+  test_buttons ();
 }
 
 // Calculate the time difference, and account for roll over too
