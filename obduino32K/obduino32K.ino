@@ -4992,8 +4992,8 @@ static void lcd_showscreen_0 ()
   display_pid (3, OUTING_DIST);
   display_pid (4, FUEL_CONS);
   display_pid (5, COOLANT_TEMP);
-  display_pid (6, OUTING_FUEL);
-  display_pid (7, OUTING_WASTE);
+  display_pid (6, TANK_CONS);
+  display_pid (7, OUTING_FUEL);
 }
 
 static void DisplayLCDPIDS(char *str, char *str2)
