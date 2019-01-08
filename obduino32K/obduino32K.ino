@@ -858,7 +858,7 @@ const char pid_reslen[] PROGMEM=
 #define BIG_NBSCREEN 2
 #endif
 
-byte active_screen = 1;  // 0,1,2,... selected by left button
+byte active_screen = 0;  // 0,1,2,... selected by left button
 
 const char pctd[] PROGMEM="- %d + "; // used in a couple of place
 const char pctdpctpct[] PROGMEM="- %d%% + "; // used in a couple of place
@@ -955,8 +955,8 @@ params_t params=
 {
   40,   //contrast: 40 does not work with some LCD, or some misterious problem so try 0 if it does not work
   1,    //metric?
-  true, //comma?
-  20,   //per hour spd
+  false, //comma?:      overwritten in params_load
+  2,    //per hour spd: overwritten in params_load
   100,  //fuel adjust
   100,  //speed adjust
   15,   //engine displacement: dL
@@ -2713,7 +2713,7 @@ unsigned int get_icons(char *retbuf)
   #else
     #ifdef UseSI
       //lowSpeed?"L\004":"\001\002" 
-      "L"
+      lowSpeed?"L/h":"L"
     #endif  
     #ifdef UseUS
       lowSpeed?"G\004":"\006\007"
@@ -2924,7 +2924,7 @@ void get_dist(char *retbuf, byte ctrip)
   #else
     #ifdef UseSI
 //      "\003"
-      " km"
+      "km"
     #endif  
     #ifdef UseUS
       "\006"
@@ -4640,7 +4640,7 @@ void test_buttons(void)
     case 1: //btn released
     {
       active_screen++;
-      if (active_screen > 1)
+      if (active_screen == NBSCREEN)
         active_screen = 0;
       break;
     }
@@ -4754,17 +4754,21 @@ void display_PID_names(void)
   delay(750); // give user some time to see new PID titles
 }
 #endif
-void needBacklight(boolean On)
+void needBacklight (boolean On)
 {
   //only if ECU or engine are off do we need the backlight.
 #ifdef useECUState
   if (!ECUconnection)
 #else
-  if (!engine_started)
+  if (1 || !engine_started)
 #endif
   {
     // Assume backlight is normally off, so set according to input On
-    analogWrite(BrightnessPin, brightness[On ? brightnessIdx : 0]);
+    //analogWrite(BrightnessPin, brightness[On ? brightnessIdx : 0]);
+    if (On)
+      lcd.backlight ();
+    else
+      lcd.noBacklight ();
   }
 }
 
@@ -4840,7 +4844,7 @@ void setup ()                    // run once, when the sketch starts
 
   engine_off = engine_on = millis();
 
-  lcd_cls_print_P(PSTR("OBDuino32k  v198"));
+  lcd_cls_print_P(PSTR("OBDuino32k v198mla"));
 #if !defined( ELM ) && !defined(skip_ISO_Init)
   do // init loop
   {
@@ -4900,7 +4904,7 @@ void setup ()                    // run once, when the sketch starts
   while(!success); // end init loop
 #else
   #ifdef ELM
-    elm_init();
+    elm_init ();
   #endif  
 #endif
 
@@ -4930,7 +4934,7 @@ void setup ()                    // run once, when the sketch starts
 char screen_cleanup = 0;
 //#define MAX_RPM   7000
 #define RPMP_COL  350 // 7000 / 20 = 350 rpms per display column
-static void lcd_showscreen_1 ()
+static void lcd_showscreen_2 ()
 {
   int i, j;
   char lstr[STRLEN];
@@ -4981,7 +4985,7 @@ static void lcd_showscreen_1 ()
   lcd.print (z2_100b % 1000);
 }
 
-static void lcd_showscreen_0 ()
+static void lcd_showscreen_1 ()
 {
   if (screen_cleanup)
     lcd.clear ();
@@ -4994,6 +4998,28 @@ static void lcd_showscreen_0 ()
   display_pid (5, COOLANT_TEMP);
   display_pid (6, TANK_CONS);
   display_pid (7, OUTING_FUEL);
+}
+
+static void lcd_showscreen_0 ()
+{
+  if (screen_cleanup)
+    lcd.clear ();
+  //
+  lcd.setCursor (0, 0);
+  if (has_rpm)
+  {
+    display_pid (0, VEHICLE_SPEED);
+    display_pid (1, ENGINE_RPM);
+  }
+  else
+    lcd.print ("ENGINE STOPPED");
+  //
+  display_pid (2, TRIP_DIST);
+  display_pid (3, TANK_DIST);
+  display_pid (4, TRIP_CONS);
+  display_pid (5, TANK_CONS);
+  display_pid (6, TRIP_WASTE);
+  display_pid (7, TANK_WASTE);
 }
 
 static void DisplayLCDPIDS(char *str, char *str2)
@@ -5018,14 +5044,19 @@ static void DisplayLCDPIDS(char *str, char *str2)
   switch (active_screen)
   {
     default:
+    case 0:
+    {
+      lcd_showscreen_0 ();
+      break;
+    }
     case 1:
     {
       lcd_showscreen_1 ();
       break;
     }
-    case 0:
+    case 2:
     {
-      lcd_showscreen_0 ();
+      lcd_showscreen_2 ();
       break;
     }
  }
@@ -5083,13 +5114,16 @@ void loop ()                     // run over and over again
   {
     unsigned long nowOn = millis();
     unsigned long engineOffPeriod = calcTimeDiff(engine_off, nowOn);
-    engine_started=1;
-    param_saved=0;
+    engine_started = 1;
+    param_saved = 0;
     if (0)
     {
       lcd.setCursor (0, 3);
       lcd_print_P (PSTR("engine start"));
     }
+    //
+    needBacklight (true);
+    active_screen = 1;
     //analogWrite(BrightnessPin, brightness[brightnessIdx]);
 
     if (engineOffPeriod > (params.OutingStopOver * MINUTES_GRANULARITY * MILLIS_PER_MINUTE))
@@ -5122,6 +5156,8 @@ void loop ()                     // run over and over again
     #ifdef carAlarmScreen
       refreshAlarmScreen = true;
     #endif
+    //
+    active_screen = 0;
   }
 
   if (engine_started)
@@ -5297,7 +5333,10 @@ void params_load(void)
   // compare CRC
   if(crc==crc_calc)     // good, copy read params to params
     params=params_tmp;
-    
+  //overwrite
+  params.per_hour_speed = 2;
+  params.use_comma = false;
+  //
 #ifdef AllowChangeUnits
 #else
   #ifdef UseSI
@@ -5742,7 +5781,7 @@ void save_params_and_display(void)
 {
   engine_off = millis();  //record the time the engine was shut off
 
-  params_save();
+  params_save ();
   param_saved = 1;
   engine_started = 0;
   
@@ -5759,7 +5798,7 @@ void save_params_and_display(void)
   delay(2000);
   
   //Turn the Backlight off
-  needBacklight(false);
+  needBacklight (false);
 }
 
 // SD card functions
